@@ -1,0 +1,19 @@
+name: Add PR Guidelines
+on:
+  pull_request:
+    types: [ labeled ]
+jobs:
+  comment:
+    if: contains(fromJson('["size/XL", "size/XXL", "size/XXXL"]'), github.event.label.name)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v5
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: 'Whoa there, that's a big PR! 🤠 [Our guidelines](https://github.com/aws/eks-anywhere/blob/e609d77d33c74040aa7891090c4b435ef95047b0/docs/developer/pull-requests.md?plain=1#L144) recommend 500loc or less. Consider talking to your reviewer about breaking it up into smaller chunks. 😄'
+            })
