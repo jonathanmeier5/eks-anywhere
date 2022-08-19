@@ -7,7 +7,11 @@ assignees: ''
 
 ---
 
-<!-- Please only use this template for feature requests. Please also search for existing open and closed issues that may answer your question. Thanks!-->
+<!--
+Please only use this template for feature requests. Please also search for existing open and closed issues that may answer your question. Thanks!
+
+See guidelines for submitting issues here: https://github.com/aws/eks-anywhere/blob/main/docs/developer/issues.md-->
+
 
 **What would you like to be added**:
 
