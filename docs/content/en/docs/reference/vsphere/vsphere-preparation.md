@@ -5,22 +5,18 @@ description: >
   Set up a vSphere cluster to prepare it for EKS Anywhere
 ---
 
-## Create a VM and template folder (Optional):
-For each user that needs to create workload clusters, have the vSphere administrator create a VM and template folder.
+Certain resources must be in place with appropriate user permissions to create an EKS Anywhere cluster using the vSphere provider.
+
+## Configuring Folder Resources
+
+### Create a VM folder:
+For each user that needs to create workload clusters, have the vSphere administrator create a VM folder.
 That folder will host:
 
 * The VMs of the Control plane and Data plane nodes of each cluster.
 * A nested folder for the management cluster and another one for each workload cluster.
 * Each cluster VM in its own nested folder under this folder.
 
-User permissions should be set up to: 
-
-* Only allow the user to see and create EKS Anywhere resources in that folder and its nested folders.
-* Prevent the user from having visibility and control over the whole vSphere cluster domain and its sub-child objects (datacenter, resource pools and other folders).
-
-In your EKS Anywhere configuration file you will reference to a path under this folder associated with the cluster you create.
-
-### Add a vSphere folder
 Follow these steps to create the user's vSphere folder:
 
 1. From vCenter, select the Menus/VM and Template tab.
@@ -29,9 +25,58 @@ Follow these steps to create the user's vSphere folder:
 1. Enter a name for the folder and click OK.
    For more details, see the [vSphere Create a Folder](https://docs.vmware.com/en/VMware-vSphere/7.0/com.vmware.vsphere.vcenterhost.doc/GUID-031BDB12-D3B2-4E2D-80E6-604F304B4D0C.html) documentation.
 
-### Set up vSphere roles and user permission
-You need to get a vSphere username with the right privileges to let you create EKS Anywhere clusters on top of your vSphere cluster.
-Then you would need to import the latest release of the EKS Anywhere OVA template to your VSphere cluster to use it to provision your Cluster nodes.
+## Configuring vSphere User, Group, and Roles
+You need a vSphere user with the right privileges to let you create EKS Anywhere clusters on top of your vSphere cluster.
+
+### Configure via CLI
+
+To configure a new user via CLI, you will need two things:
+- a set of vSphere admin credentials with the ability to create users and groups
+- a `user.yaml` file:
+```yaml
+apiVersion: "eks-anywhere.amazon.com/v1"
+kind: vSphereUser
+spec:
+  username: "eksa" // optional, default eksa
+  group: "MyExistingGroup" // optional, default EKSAUsers
+  globalRole: "MyGlobalRole" // optional, default EKSAGlobalRole
+  userRole: "MyUserRole" // optional, default EKSAUserRole
+  adminRole: "MyEKSAAdminRole" // optional, default EKSACloudAdminRole
+  datacenter: "MyDatacenter"
+  vSphereDomain: "vsphere.local"
+  connection:
+    server: "https://my-vsphere.internal.acme.com"
+    insecure: false
+  objects:
+    networks:
+      - !!str "/MyDatacenter/network/My Network"
+    datastores:
+      - !!str "/MyDatacenter/datastore/MyDatastore2"
+    resourcePools:
+      - !!str "/MyDatacenter/host/Cluster-03/MyResourcePool"
+    folders:
+      - !!str "/MyDatacenter/vm/OrgDirectory/MyVMs"
+    templates:
+      - !!str "/MyDatacenter/vm/Templates/MyTemplates"
+```
+
+Set the admin credentials as environment variables:
+```bash
+export EKSA_VSPHERE_USERNAME=<ADMIN_VSPHERE_USERNAME>
+export EKSA_VSPHERE_PASSWORD=<ADMIN_VSPHERE_PASSWORD>
+```
+
+If the user does not already exists, you can create the user and all the specified group and role objects by runing:
+```bash
+eksctl anywhere exp vsphere setup user -f user.yaml --password '<NewUserPassword>'
+```
+
+If the user or any of the group or role objects already exist, use the force flag instead to overwrite Group-Role-Object mappings for the group, roles, and objects specified in the `user.yaml` config file:
+```
+eksctl anywhere exp vsphere setup user -f user.yaml --force
+```
+
+### Configure via UI
 
 #### Add a vCenter User
 Ask your VSphere administrator to add a vCenter user that will be used for the provisioning of the EKS Anywhere cluster in VMware vSphere.
