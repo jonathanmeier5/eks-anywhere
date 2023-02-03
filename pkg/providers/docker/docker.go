@@ -10,6 +10,7 @@ import (
 	etcdv1 "github.com/aws/etcdadm-controller/api/v1beta1"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	controlplanev1 "sigs.k8s.io/cluster-api/controlplane/kubeadm/api/v1beta1"
+	"github.com/aws/eks-anywhere/pkg/config"
 
 	"github.com/aws/eks-anywhere/pkg/api/v1alpha1"
 	"github.com/aws/eks-anywhere/pkg/bootstrapper"
@@ -274,6 +275,8 @@ func buildTemplateMapCP(clusterSpec *cluster.Spec) (map[string]interface{}, erro
 		"haproxyImageRepository":        getHAProxyImageRepo(bundle.Haproxy.Image),
 		"haproxyImageTag":               bundle.Haproxy.Image.Tag(),
 		"workerNodeGroupConfigurations": clusterSpec.Cluster.Spec.WorkerNodeGroupConfigurations,
+		"eksaAccessKeyId": os.Getenv(config.EksaAccessKeyIdEnv),
+		"eksaSecretAccessKey": os.Getenv(config.EksaSecretAccessKeyEnv),
 	}
 
 	if clusterSpec.Cluster.Spec.ExternalEtcdConfiguration != nil {
