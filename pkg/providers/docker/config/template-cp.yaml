@@ -187,13 +187,6 @@ spec:
       owner: root:root
       path: /var/lib/kubeadm/aws-iam-authenticator/pki/key.pem
 {{- end}}
-    # - contentFrom:
-    #     secret:
-    #       name: {{.clusterName}}-encryption-configuration
-    #       key: config
-    #   owner: root:root
-    #   permissions: "0640"
-    #   path: /etc/kubernetes/enc/encryption-config.yaml
     - content: |
         apiVersion: apiserver.config.k8s.io/v1
         kind: EncryptionConfiguration
@@ -211,7 +204,13 @@ spec:
       permissions: "0640"
       path: /etc/kubernetes/enc/encryption-config.yaml
     - content: |
+        apiVersion: v1
+        kind: Pod
+        metadata:
+          name: aws-encryption-provider
+          namespace: kube-system
         spec:
+          hostNetwork: true
           containers:
           - image: public.ecr.aws/a9u1e4h1/aws-encryption-provider/aws-encryption-provider:0.0.1
             name: aws-encryption-provider
@@ -228,22 +227,22 @@ spec:
                 path: /healthz
                 port: 8080
             volumeMounts:
-            - mountPath: /var/run/kmsplugin
-              name: var-run-kmsplugin
-            - mountPath: /root/.aws
-              name: aws-credentials
+              - mountPath: /var/run/kmsplugin
+                name: var-run-kmsplugin
+              - mountPath: /root/.aws
+                name: aws-credentials
           volumes:
-          - name: var-run-kmsplugin
-            hostPath:
-              path: /var/run/kmsplugin
-              type: DirectoryOrCreate
-          - name: aws-credentials
-            hostPath:
-              path: /etc/kubernetes/aws
-              type: DirectoryOrCreate
+            - name: var-run-kmsplugin
+              hostPath:
+                path: /var/run/kmsplugin
+                type: DirectoryOrCreate
+            - name: aws-credentials
+              hostPath:
+                path: /etc/kubernetes/aws
+                type: DirectoryOrCreate
       owner: root:root
       permissions: "0640"
-      path: /etc/kubernetes/patches/kube-apiserver0+strategic.yaml
+      path: /etc/kubernetes/manifests/aws-encryption-provider.yaml
     - content: |
           [profile default]
           aws_access_key_id={{ .eksaAccessKeyId }}
@@ -258,6 +257,7 @@ spec:
           name: busybox
           namespace: default
         spec:
+          hostNetwork: true
           containers:
           - image: busybox
             command:
@@ -270,8 +270,6 @@ spec:
       permissions: "0640"
       path: /etc/kubernetes/manifests/busybox.yaml
     initConfiguration:
-      patches:
-        directory: /etc/kubernetes/patches
       nodeRegistration:
         criSocket: /var/run/containerd/containerd.sock
         kubeletExtraArgs:
@@ -293,8 +291,6 @@ spec:
         {{- end }}
 {{- end }}
     joinConfiguration:
-      patches:
-        directory: /etc/kubernetes/patches
       nodeRegistration:
         criSocket: /var/run/containerd/containerd.sock
         kubeletExtraArgs:
