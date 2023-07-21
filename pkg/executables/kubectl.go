@@ -1167,6 +1167,11 @@ type TinkerbellMachineConfigResponse struct {
 	Items []*v1alpha1.TinkerbellMachineConfig `json:"items,omitempty"`
 }
 
+// ClusterResponse contains list of EKS-A Cluster.
+type ClusterResponse struct {
+	Items []*v1alpha1.Cluster
+}
+
 type NutanixMachineConfigResponse struct {
 	Items []*v1alpha1.NutanixMachineConfig `json:"items,omitempty"`
 }
