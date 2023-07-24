@@ -478,13 +478,13 @@ func TestValidateEksaVersionSkew(t *testing.T) {
 		},
 		{
 			name:           "Bad Cluster version",
-			wantErr:        fmt.Errorf("spec.EksaVersion: Invalid value: \"v0.0.0-dev\": old cluster is invalid"),
+			wantErr:        nil,
 			version:        &badVersion,
 			upgradeVersion: &v,
 		},
 		{
 			name:           "Bad upgrade version",
-			wantErr:        fmt.Errorf("spec.EksaVersion: Invalid value: \"invalid\": upgrade cluster is invalid"),
+			wantErr:        fmt.Errorf("spec.EksaVersion: Invalid value: \"invalid\": EksaVersion is not a valid semver"),
 			version:        &v,
 			upgradeVersion: &badVersion,
 		},
@@ -496,13 +496,13 @@ func TestValidateEksaVersionSkew(t *testing.T) {
 		},
 		{
 			name:           "Cluster nil",
-			wantErr:        fmt.Errorf("could not get cluster's version"),
+			wantErr:        nil,
 			version:        nil,
 			upgradeVersion: &v,
 		},
 		{
 			name:           "Upgrade nil",
-			wantErr:        fmt.Errorf("upgrade cluster version cannot be nil"),
+			wantErr:        nil,
 			version:        &uv,
 			upgradeVersion: nil,
 		},
@@ -524,6 +524,8 @@ func TestValidateEksaVersionSkew(t *testing.T) {
 			err := validations.ValidateEksaVersionSkew(ctx, tt.kubectl, mgmtCluster, tt.clusterSpec)
 			if err != nil {
 				tt.Expect(err.Error()).To(ContainSubstring(tc.wantErr.Error()))
+			} else {
+				tt.Expect(tc.wantErr).To(BeNil())
 			}
 		})
 	}
@@ -559,7 +561,7 @@ func TestValidateManagementClusterEksaVersion(t *testing.T) {
 		},
 		{
 			name:              "Fail",
-			wantErr:           fmt.Errorf("cannot upgrade workload cluster with version"),
+			wantErr:           fmt.Errorf("cannot upgrade workload cluster to"),
 			version:           &uv,
 			managementVersion: &v,
 		},
