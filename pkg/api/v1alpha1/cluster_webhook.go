@@ -16,7 +16,6 @@ package v1alpha1
 
 import (
 	"fmt"
-	"math"
 	"reflect"
 	"strings"
 
@@ -147,11 +146,12 @@ func ValidateEksaVersionSkew(new, oldCluster *Cluster) field.ErrorList {
 		return allErrs
 	}
 
-	majorVersionDifference := math.Abs(float64(newEksaVersion.Major) - float64(oldEksaVersion.Major))
+	majorVersionDifference := int64(newEksaVersion.Major) - int64(oldEksaVersion.Major)
 	minorVersionDifference := int64(newEksaVersion.Minor) - int64(oldEksaVersion.Minor)
+	const supportedMinorVersionIncrement int64 = 1
 
 	// if major different or upgrade difference greater than one minor version
-	if majorVersionDifference > 0 || minorVersionDifference > SupportedMinorVersionIncrement {
+	if majorVersionDifference != 0 || minorVersionDifference > supportedMinorVersionIncrement {
 		allErrs = append(
 			allErrs,
 			field.Invalid(eksaVersionPath, new.Spec.EksaVersion, fmt.Sprintf("cannot upgrade to %v from %v: EksaVersion upgrades must have a skew of 1 minor version", newEksaVersion, oldEksaVersion)))
