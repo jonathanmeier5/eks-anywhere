@@ -368,7 +368,7 @@ func (r *ClusterReconciler) preClusterProviderReconcile(ctx context.Context, log
 			return controller.Result{}, err
 		}
 
-		if err := validations.ValidateManagementEksaVersion(ctx, log, mgmt, cluster); err != nil {
+		if err := validations.ValidateManagementEksaVersion(mgmt, cluster); err != nil {
 			return controller.Result{}, err
 		}
 	}

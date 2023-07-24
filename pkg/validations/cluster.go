@@ -4,9 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
-	"github.com/go-logr/logr"
 
 	"github.com/aws/eks-anywhere/pkg/api/v1alpha1"
 	"github.com/aws/eks-anywhere/pkg/cluster"
@@ -162,11 +159,11 @@ func ValidateManagementClusterEksaVersion(ctx context.Context, k KubectlClient, 
 		return err
 	}
 
-	return ValidateManagementEksaVersion(ctx, logger.Get(), mgmt, workload.Cluster)
+	return ValidateManagementEksaVersion(mgmt, workload.Cluster)
 }
 
 // ValidateManagementEksaVersion ensures a workload cluster's EksaVersion is not greater than a management cluster's version.
-func ValidateManagementEksaVersion(ctx context.Context, log logr.Logger, mgmtCluster, cluster *v1alpha1.Cluster) error {
+func ValidateManagementEksaVersion(mgmtCluster, cluster *v1alpha1.Cluster) error {
 	if !clustersHaveEksaVersion(mgmtCluster, cluster) {
 		return nil
 	}
@@ -177,16 +174,16 @@ func ValidateManagementEksaVersion(ctx context.Context, log logr.Logger, mgmtClu
 	}
 
 	if wVersion.GreaterThan(mVersion) {
-		message := fmt.Sprintf("cannot upgrade workload cluster with version %v while management cluster is an older version %v", wVersion, mVersion)
-		cluster.Status.FailureMessage = ptr.String(message)
-		reason := v1alpha1.FailureReasonType(message)
+		errMsg := fmt.Sprintf("cannot upgrade workload cluster to %v while management cluster is an older version: %v", wVersion, mVersion)
+		reason := v1alpha1.EksaVersionInvalidReason
+		cluster.Status.FailureMessage = ptr.String(errMsg)
 		cluster.Status.FailureReason = &reason
-		return fmt.Errorf(message)
+		return fmt.Errorf(errMsg)
 	}
 
 	// reset failure message if old matches this validation
 	oldFailure := cluster.Status.FailureReason
-	if oldFailure != nil && strings.Contains(string(*oldFailure), "cannot upgrade workload cluster with version") {
+	if oldFailure != nil && *oldFailure == v1alpha1.EksaVersionInvalidReason {
 		cluster.Status.FailureMessage = nil
 		cluster.Status.FailureReason = nil
 	}
